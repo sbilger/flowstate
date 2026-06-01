@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FlowState — Visual Mock v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* warm paper palette — crafted, not flat-slate */
+    --paper:   #f4efe6;   /* aged paper background */
+    --paper-2: #efe8db;   /* slightly deeper */
+    --card:    #fbf8f1;   /* raised card */
+    --ink:     #2b2620;   /* warm near-black */
+    --ink-2:   #5c5347;   /* muted */
+    --ink-3:   #8a8071;   /* subtle */
+    --line:    #ddd3c2;   /* hairline */
+    --line-2:  #cabfa9;
+    --teal:    #0f8a7e;   /* focus / primary */
+    --teal-d:  #0b6c62;
+    --clay:    #d7642f;   /* action / energy-high warmth */
+    --gold:    #c8923a;   /* med */
+    --moss:    #5d8c52;   /* low */
+    --shadow:  18px 18px 40px rgba(60,48,30,.10), 2px 2px 0 rgba(60,48,30,.04);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:'Inter Tight',system-ui,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 600px at 70% -10%, #fbf6ec 0%, transparent 60%),
+      var(--paper);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* paper grain */
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.5;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/></svg>");
+    mix-blend-mode:multiply;
+  }
+  .wrap{position:relative; z-index:1; max-width:430px; margin:0 auto; min-height:100vh;
+        display:flex; flex-direction:column;
+        border-left:1px solid var(--line); border-right:1px solid var(--line);
+        background:linear-gradient(180deg, rgba(255,255,255,.25), transparent 220px);}
+  /* header */
+  header{display:flex; align-items:center; justify-content:space-between; padding:20px 22px;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .mark{width:30px;height:30px;border-radius:9px;background:var(--ink);display:grid;place-items:center;
+        box-shadow:2px 2px 0 var(--line-2);}
+  .mark svg{stroke:var(--paper)}
+  .brand b{font-family:'Fraunces',serif; font-weight:600; font-size:21px; letter-spacing:-.5px;}
+  .energy{display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none;
+          background:var(--card); border:1px solid var(--line-2); border-radius:999px;
+          padding:7px 13px; font-size:13.5px; color:var(--ink-2); transition:border-color .2s, transform .08s;
+          box-shadow:2px 2px 0 rgba(60,48,30,.05);}
+  .energy:hover{border-color:var(--teal)}
+  .energy:active{transform:translate(1px,1px)}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--moss);box-shadow:0 0 0 3px rgba(93,140,82,.18)}
+  /* main */
+  main{flex:1; padding:8px 22px 26px;}
+  .greeting{font-family:'Fraunces',serif; font-weight:600; font-size:27px; letter-spacing:-.6px; margin:6px 0 2px;}
+  .sub{color:var(--ink-2); font-size:15px; margin:0 0 22px; max-width:34ch; line-height:1.5;}
+  /* hero card — tactile, slight tilt, layered */
+  .card{position:relative; background:var(--card); border:1px solid var(--line);
+        border-radius:20px; padding:26px 24px 22px; box-shadow:var(--shadow);
+        transform:rotate(-.5deg); transition:transform .25s ease, box-shadow .25s ease;}
+  .card::after{content:""; position:absolute; inset:0; border-radius:20px; pointer-events:none;
+               box-shadow:inset 0 1px 0 rgba(255,255,255,.6);}
+  .card.flip{animation:pop .4s ease}
+  @keyframes pop{0%{transform:rotate(-.5deg) translateY(8px); opacity:.4}100%{transform:rotate(-.5deg) translateY(0); opacity:1}}
+  .eyebrow{display:inline-flex; align-items:center; gap:7px; font-size:11.5px; font-weight:600;
+           letter-spacing:1.4px; text-transform:uppercase; color:var(--clay);}
+  .eyebrow .pip{width:7px;height:7px;border-radius:50%;background:var(--clay)}
+  .task{font-family:'Fraunces',serif; font-weight:600; font-size:30px; line-height:1.12;
+        letter-spacing:-.8px; margin:14px 0 6px;}
+  /* hand-drawn underline accent */
+  .task .ul{position:relative; white-space:nowrap}
+  .meta{color:var(--ink-3); font-size:13.5px; margin:0 0 22px; font-variant-numeric:tabular-nums;}
+  .row{display:flex; gap:11px}
+  .btn{font-family:'Inter Tight',sans-serif; font-weight:600; font-size:15px; cursor:pointer;
+       border-radius:13px; padding:13px 18px; border:1px solid transparent; transition:transform .08s, filter .2s, background .2s;}
+  .btn:active{transform:translate(1px,1px)}
+  .btn-primary{flex:1; background:var(--teal); color:#fbf8f1; box-shadow:3px 3px 0 var(--teal-d);}
+  .btn-primary:hover{filter:brightness(1.06)}
+  .btn-ghost{background:transparent; color:var(--ink-2); border-color:var(--line-2);}
+  .btn-ghost:hover{border-color:var(--ink-3); color:var(--ink)}
+  .reroll{text-align:center; margin:18px 0 0; font-size:14px; color:var(--ink-3);}
+  .reroll button{background:none;border:none;cursor:pointer;color:var(--teal);font-weight:600;font-size:14px;
+                 font-family:inherit; display:inline-flex; align-items:center; gap:5px;}
+  .reroll button:hover{text-decoration:underline}
+  /* next up */
+  .label{font-size:11.5px; letter-spacing:1.3px; text-transform:uppercase; color:var(--ink-3);
+         margin:30px 0 12px; display:flex; align-items:center; gap:8px;}
+  .label::after{content:"";flex:1;height:1px;background:var(--line)}
+  .item{display:flex; align-items:center; justify-content:space-between; background:var(--card);
+        border:1px solid var(--line); border-radius:13px; padding:13px 15px; margin-bottom:9px;
+        box-shadow:2px 2px 0 rgba(60,48,30,.04);}
+  .item .l{display:flex; align-items:center; gap:11px; font-size:15px;}
+  .item .t{color:var(--ink-3); font-size:13px; font-variant-numeric:tabular-nums;}
+  .cal{display:flex; align-items:center; gap:10px; margin-top:18px; padding:13px 15px; font-size:13.5px;
+       color:var(--ink-2); background:rgba(255,255,255,.4); border:1px dashed var(--line-2); border-radius:13px;}
+  /* focus screen */
+  .focus{flex:1; display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; position:relative;}
+  .focus.on{display:flex}
+  .endx{position:absolute; top:20px; right:22px; background:none;border:none;cursor:pointer;color:var(--ink-3);font-size:14px; font-family:inherit;}
+  .focus .kicker{color:var(--ink-3); font-size:12px; letter-spacing:2px; text-transform:uppercase; margin-bottom:26px;}
+  .focus h2{font-family:'Fraunces',serif; font-weight:600; font-size:26px; letter-spacing:-.6px; margin:0 0 30px; max-width:18ch;}
+  .timer{font-family:'Fraunces',serif; font-weight:500; font-size:72px; letter-spacing:-2px; font-variant-numeric:tabular-nums;}
+  .ring{width:150px;height:1px;background:var(--line-2); margin:26px 0}
+  .quote{color:var(--ink-3); font-style:italic; font-family:'Fraunces',serif; margin-top:34px; font-size:16px;}
+  .done{flex:1; display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px;}
+  .done.on{display:flex}
+  .seal{width:84px;height:84px;border-radius:50%;background:var(--moss);display:grid;place-items:center;margin-bottom:18px;
+        box-shadow:4px 4px 0 #4a6f41; color:#fbf8f1;}
+  .done h2{font-family:'Fraunces',serif;font-weight:600;font-size:27px;margin:0;letter-spacing:-.5px}
+  .done p{color:var(--ink-2); margin:8px 0 0}
+  /* nav */
+  nav{display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--line); background:rgba(251,248,241,.7); backdrop-filter:blur(6px);}
+  nav button{background:none;border:none;cursor:pointer;padding:12px 0 14px;display:flex;flex-direction:column;
+             align-items:center;gap:5px;font-family:inherit;font-size:11px;color:var(--ink-3);transition:color .2s}
+  nav button.active{color:var(--teal)}
+  nav button:hover{color:var(--ink)}
+  svg{display:block}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <span class="mark">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>
+      </span>
+      <b>FlowState</b>
+    </div>
+    <div class="energy" id="energyBtn" onclick="cycleEnergy()">
+      <span class="dot" id="energyDot"></span>
+      <span id="energyLabel">Energy&nbsp;·&nbsp;Good</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+    </div>
+  </header>
+
+  <!-- NOW -->
+  <main id="now">
+    <h1 class="greeting" id="greeting">Good evening, Sean.</h1>
+    <p class="sub" id="sub">You're sharp right now — here's the one thing worth doing.</p>
+
+    <div class="card" id="card">
+      <span class="eyebrow"><span class="pip" id="pip"></span><span id="badge">HIGH FOCUS</span></span>
+      <h2 class="task"><span class="ul" id="task">Fix the export bug</span></h2>
+      <p class="meta" id="meta">about 30 min · captured in brain dump</p>
+      <div class="row">
+        <button class="btn btn-primary" onclick="goFocus()">
+          <span style="display:inline-flex;align-items:center;gap:8px;justify-content:center">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Start focus
+          </span>
+        </button>
+        <button class="btn btn-ghost" onclick="snooze()">Not now</button>
+      </div>
+      <p class="reroll">Doesn't fit?
+        <button onclick="pickForMe()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.3" fill="currentColor"/><circle cx="16" cy="16" r="1.3" fill="currentColor"/><circle cx="16" cy="8" r="1.3" fill="currentColor"/><circle cx="8" cy="16" r="1.3" fill="currentColor"/></svg>
+          Pick for me
+        </button>
+      </p>
+    </div>
+
+    <div class="label">Next, if you finish</div>
+    <div class="item"><span class="l"><span class="dot" style="background:var(--moss);box-shadow:none"></span> Reply to landlord</span><span class="t">5 min</span></div>
+    <div class="item"><span class="l"><span class="dot" style="background:var(--gold);box-shadow:none"></span> Gather W-2s</span><span class="t">15 min</span></div>
+
+    <div class="cal">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>
+      Free until 2:00 — next up, dentist at 2:30.
+    </div>
+  </main>
+
+  <!-- FOCUS -->
+  <section class="focus" id="focus">
+    <button class="endx" onclick="endFocus()">✕ end</button>
+    <div class="kicker">Focus</div>
+    <h2 id="focusTitle">Fix the export bug</h2>
+    <div class="timer" id="timer">00:00</div>
+    <div class="ring"></div>
+    <div class="row">
+      <button class="btn btn-ghost" id="pauseBtn" onclick="togglePause()">Pause</button>
+      <button class="btn btn-primary" style="box-shadow:3px 3px 0 #4a6f41;background:var(--moss)" onclick="finish()">Done</button>
+    </div>
+    <p class="quote">"Stay here. One thing. You've got it."</p>
+  </section>
+
+  <!-- DONE -->
+  <section class="done" id="done">
+    <div class="seal"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+    <h2>One down.</h2>
+    <p>Session logged — that sharpens your insights.</p>
+    <button class="btn btn-primary" style="margin-top:22px;flex:none;padding:13px 22px" onclick="endFocus()">Back to what now</button>
+  </section>
+
+  <nav>
+    <button class="active"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>Now</button>
+    <button><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9 6 9-6M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7M3 7l2-3h14l2 3"/></svg>Inbox</button>
+    <button><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Tasks</button>
+    <button><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M8 14l3-4 3 3 4-6"/></svg>Insights</button>
+  </nav>
+</div>
+
+<script>
+  const energies=[
+    {label:'Energy · Good', dot:'var(--moss)', sub:"You're sharp right now — here's the one thing worth doing.",
+     task:'Fix the export bug', badge:'HIGH FOCUS', color:'var(--clay)', meta:'about 30 min · captured in brain dump'},
+    {label:'Energy · Okay', dot:'var(--gold)', sub:"Medium gas in the tank — here's a solid, doable pick.",
+     task:'Gather the W-2s', badge:'MEDIUM EFFORT', color:'var(--gold)', meta:'about 15 min · from your tax breakdown'},
+    {label:'Energy · Fried', dot:'var(--clay)', sub:"Low battery — only the easy wins, nothing scary.",
+     task:'Reply to the landlord', badge:'LOW EFFORT', color:'var(--moss)', meta:'about 5 min · captured in brain dump'},
+  ];
+  let ei=0;
+  const $=id=>document.getElementById(id);
+  function cycleEnergy(){ei=(ei+1)%energies.length;apply();}
+  function apply(){
+    const e=energies[ei];
+    $('energyLabel').innerHTML=e.label.replace('·','&nbsp;·&nbsp;');
+    $('energyDot').style.background=e.dot;
+    $('energyDot').style.boxShadow='0 0 0 3px '+e.dot.replace('var(','').replace(')','')+'00';
+    $('sub').textContent=e.sub;
+    $('task').textContent=e.task;
+    $('badge').textContent=e.badge;
+    $('pip').style.background=e.color;
+    $('badge').parentElement.style.color=e.color;
+    $('meta').textContent=e.meta;
+    bump();
+  }
+  function bump(){const c=$('card');c.classList.remove('flip');void c.offsetWidth;c.classList.add('flip');}
+  const pool=['Plan the weekend league','Order a disc golf basket','Open the tax software','Draft standup notes','Water the plants'];
+  function pickForMe(){const t=pool[Math.floor(Math.random()*pool.length)];$('task').textContent=t;
+    $('meta').textContent='about '+(5+Math.floor(Math.random()*5)*5)+' min · rolled for you';bump();}
+  function snooze(){pickForMe();}
+  let secs=0,id=null,paused=false;
+  function goFocus(){$('focusTitle').textContent=$('task').textContent;$('now').style.display='none';$('done').classList.remove('on');
+    $('focus').classList.add('on');secs=0;paused=false;$('pauseBtn').textContent='Pause';draw();id=setInterval(()=>{if(!paused){secs++;draw();}},1000);}
+  function draw(){$('timer').textContent=String(Math.floor(secs/60)).padStart(2,'0')+':'+String(secs%60).padStart(2,'0');}
+  function togglePause(){paused=!paused;$('pauseBtn').textContent=paused?'Resume':'Pause';}
+  function finish(){clearInterval(id);$('focus').classList.remove('on');$('done').classList.add('on');}
+  function endFocus(){clearInterval(id);$('focus').classList.remove('on');$('done').classList.remove('on');$('now').style.display='block';}
+</script>
+</body>
+</html>
