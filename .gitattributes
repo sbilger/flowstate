@@ -1,0 +1,12 @@
+# Normalize line endings; let Git handle CRLF/LF automatically.
+* text=auto
+
+*.cs text diff=csharp
+*.razor text
+*.csproj text
+*.sln text eol=crlf
+*.json text
+*.yml text
+*.css text
+*.js text
+*.md text

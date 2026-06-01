@@ -1,0 +1,72 @@
+@page "/tasks"
+@using FlowState.Application.Tasks
+@using FlowState.Domain.Tasks
+@using MediatR
+@inject IMediator Mediator
+@rendermode InteractiveServer
+
+<PageTitle>Tasks · FlowState</PageTitle>
+
+<div class="fs-page">
+    <h1 class="fs-h1">Brain dump</h1>
+    <p class="fs-sub">Throw anything in. Sort it out later.</p>
+
+    <div class="fs-capture">
+        <input class="fs-input" placeholder="Type a task and hit enter…"
+               @bind="_newTitle" @bind:event="oninput" @onkeydown="OnKeyDown" />
+        <select class="fs-select" @bind="_newEnergy">
+            <option value="@EnergyCost.Low">Low</option>
+            <option value="@EnergyCost.Medium">Medium</option>
+            <option value="@EnergyCost.High">High</option>
+        </select>
+        <button class="fs-add" @onclick="AddAsync">Add</button>
+    </div>
+
+    @if (_tasks is null)
+    {
+        <p class="fs-muted">Loading…</p>
+    }
+    else if (_tasks.Count == 0)
+    {
+        <p class="fs-muted">Nothing here yet. Capture something above.</p>
+    }
+    else
+    {
+        <ul class="fs-list">
+            @foreach (var t in _tasks)
+            {
+                <li class="fs-item">
+                    <span class="fs-l">
+                        <span class="fs-dot fs-@t.EnergyCost.ToString().ToLower()"></span>
+                        @t.Title
+                    </span>
+                    <span class="fs-t">@t.EnergyCost</span>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+@code {
+    private IReadOnlyList<TaskDto>? _tasks;
+    private string _newTitle = string.Empty;
+    private EnergyCost _newEnergy = EnergyCost.Medium;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load() => _tasks = await Mediator.Send(new GetTasksQuery());
+
+    private async Task AddAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newTitle)) return;
+        await Mediator.Send(new AddTaskCommand(_newTitle, _newEnergy));
+        _newTitle = string.Empty;
+        _newEnergy = EnergyCost.Medium;
+        await Load();
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await AddAsync();
+    }
+}

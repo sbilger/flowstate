@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-FlowState.Workers-2eb8f62c-e20d-47c9-8bff-c27ef775c71c</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.16" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FlowState.Application\FlowState.Application.csproj" />
+    <ProjectReference Include="..\FlowState.Infrastructure\FlowState.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>
