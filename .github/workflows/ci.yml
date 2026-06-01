@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Unit tests
+        run: dotnet test tests/FlowState.UnitTests --no-build --configuration Release --verbosity normal
+
+      # Integration tests use Testcontainers, which needs Docker.
+      # ubuntu-latest runners have Docker available out of the box.
+      - name: Integration tests
+        run: dotnet test tests/FlowState.IntegrationTests --no-build --configuration Release --verbosity normal
