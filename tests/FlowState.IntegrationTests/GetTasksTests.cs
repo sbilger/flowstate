@@ -17,6 +17,7 @@ public class GetTasksTests : IAsyncLifetime
         .Build();
 
     private FlowStateDbContext _db = null!;
+    private TestDbContextFactory _factory = null!;
 
     public async Task InitializeAsync()
     {
@@ -27,6 +28,7 @@ public class GetTasksTests : IAsyncLifetime
             .Options;
 
         _db = new FlowStateDbContext(options);
+        _factory = new TestDbContextFactory(_postgres.GetConnectionString());
         await _db.Database.MigrateAsync();
     }
 
@@ -39,7 +41,7 @@ public class GetTasksTests : IAsyncLifetime
     [Fact]
     public async Task AddedTasks_AreReturned_NewestFirst()
     {
-        var repo = new TaskRepository(_db);
+        var repo = new TaskRepository(_factory);
         await repo.AddAsync(new TaskItem("first", EnergyCost.Low));
         await repo.SaveChangesAsync();
         await Task.Delay(10);
