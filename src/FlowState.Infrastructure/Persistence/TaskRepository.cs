@@ -4,11 +4,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FlowState.Infrastructure.Persistence;
 
-public class TaskRepository : ITaskRepository
+public class TaskRepository : ITaskRepository, IDisposable
 {
     private readonly FlowStateDbContext _db;
 
-    public TaskRepository(FlowStateDbContext db) => _db = db;
+    /// <summary>
+    /// Each repository instance owns a fresh context from the factory. This sidesteps the
+    /// Blazor Server "shared scoped DbContext" concurrency trap (one circuit-wide scope).
+    /// </summary>
+    public TaskRepository(IDbContextFactory<FlowStateDbContext> factory)
+        => _db = factory.CreateDbContext();
 
     public async Task<IReadOnlyList<TaskItem>> GetAllAsync(CancellationToken cancellationToken = default)
         => await _db.Tasks.AsNoTracking()
@@ -42,4 +47,6 @@ public class TaskRepository : ITaskRepository
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
         => await _db.SaveChangesAsync(cancellationToken);
+
+    public void Dispose() => _db.Dispose();
 }

@@ -18,6 +18,7 @@ public class FocusSessionFlowTests : IAsyncLifetime
         .Build();
 
     private FlowStateDbContext _db = null!;
+    private TestDbContextFactory _factory = null!;
 
     public async Task InitializeAsync()
     {
@@ -26,6 +27,7 @@ public class FocusSessionFlowTests : IAsyncLifetime
             .UseNpgsql(_postgres.GetConnectionString())
             .Options;
         _db = new FlowStateDbContext(options);
+        _factory = new TestDbContextFactory(_postgres.GetConnectionString());
         await _db.Database.MigrateAsync();
     }
 
@@ -37,7 +39,7 @@ public class FocusSessionFlowTests : IAsyncLifetime
 
     private async Task<TaskItem> SeedTask(EnergyCost cost)
     {
-        var repo = new TaskRepository(_db);
+        var repo = new TaskRepository(_factory);
         var task = new TaskItem("focus me", cost, Importance.High);
         await repo.AddAsync(task);
         await repo.SaveChangesAsync();
@@ -48,7 +50,7 @@ public class FocusSessionFlowTests : IAsyncLifetime
     public async Task Start_DerivesPlannedDuration_FromEnergyCost()
     {
         var task = await SeedTask(EnergyCost.High); // → 25 min default
-        var start = new StartFocusSessionHandler(new TaskRepository(_db), new FocusSessionRepository(_db));
+        var start = new StartFocusSessionHandler(new TaskRepository(_factory), new FocusSessionRepository(_factory));
 
         var session = await start.Handle(new StartFocusSessionCommand(task.Id), CancellationToken.None);
 
@@ -60,13 +62,13 @@ public class FocusSessionFlowTests : IAsyncLifetime
     public async Task End_Completed_MarksTaskDone()
     {
         var task = await SeedTask(EnergyCost.Low);
-        var start = new StartFocusSessionHandler(new TaskRepository(_db), new FocusSessionRepository(_db));
-        var end = new EndFocusSessionHandler(new TaskRepository(_db), new FocusSessionRepository(_db));
+        var start = new StartFocusSessionHandler(new TaskRepository(_factory), new FocusSessionRepository(_factory));
+        var end = new EndFocusSessionHandler(new TaskRepository(_factory), new FocusSessionRepository(_factory));
 
         var session = await start.Handle(new StartFocusSessionCommand(task.Id), CancellationToken.None);
         await end.Handle(new EndFocusSessionCommand(session.Id, FocusOutcome.Completed), CancellationToken.None);
 
-        var reloaded = await new TaskRepository(_db).GetByIdAsync(task.Id);
+        var reloaded = await new TaskRepository(_factory).GetByIdAsync(task.Id);
         Assert.Equal(TaskItemStatus.Done, reloaded!.Status);
     }
 
@@ -74,13 +76,13 @@ public class FocusSessionFlowTests : IAsyncLifetime
     public async Task End_Progress_TouchesTask_ButKeepsItOpen()
     {
         var task = await SeedTask(EnergyCost.Medium);
-        var start = new StartFocusSessionHandler(new TaskRepository(_db), new FocusSessionRepository(_db));
-        var end = new EndFocusSessionHandler(new TaskRepository(_db), new FocusSessionRepository(_db));
+        var start = new StartFocusSessionHandler(new TaskRepository(_factory), new FocusSessionRepository(_factory));
+        var end = new EndFocusSessionHandler(new TaskRepository(_factory), new FocusSessionRepository(_factory));
 
         var session = await start.Handle(new StartFocusSessionCommand(task.Id), CancellationToken.None);
         await end.Handle(new EndFocusSessionCommand(session.Id, FocusOutcome.Progress), CancellationToken.None);
 
-        var reloaded = await new TaskRepository(_db).GetByIdAsync(task.Id);
+        var reloaded = await new TaskRepository(_factory).GetByIdAsync(task.Id);
         Assert.Equal(TaskItemStatus.Open, reloaded!.Status);
         Assert.Equal(DecayState.Active, reloaded.DecayState); // touch keeps it active
     }

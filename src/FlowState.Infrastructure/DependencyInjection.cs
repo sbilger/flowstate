@@ -14,11 +14,16 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("FlowState")
             ?? throw new InvalidOperationException("Connection string 'FlowState' not configured.");
 
-        services.AddDbContext<FlowStateDbContext>(options =>
+        // Blazor Server caveat: a DI scope lives for the whole circuit, so a single scoped
+        // DbContext gets shared across components that query concurrently (e.g. the home page
+        // and the resurfaced banner both initializing) -> "second operation started on this
+        // context". The factory hands each unit of work its own short-lived context.
+        services.AddDbContextFactory<FlowStateDbContext>(options =>
             options.UseNpgsql(connectionString));
 
-        services.AddScoped<ITaskRepository, TaskRepository>();
-        services.AddScoped<IFocusSessionRepository, FocusSessionRepository>();
+        // Transient so each handler/component gets a fresh repository (and thus its own context).
+        services.AddTransient<ITaskRepository, TaskRepository>();
+        services.AddTransient<IFocusSessionRepository, FocusSessionRepository>();
 
         return services;
     }

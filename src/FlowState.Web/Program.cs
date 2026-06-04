@@ -42,7 +42,8 @@ var app = builder.Build();
 // Apply pending migrations + seed on startup (fine for single-instance demo).
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<FlowStateDbContext>();
+    var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<FlowStateDbContext>>();
+    await using var db = await factory.CreateDbContextAsync();
     await db.Database.MigrateAsync();
     await DemoDataSeeder.SeedAsync(db);
 }
