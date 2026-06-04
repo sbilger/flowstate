@@ -91,3 +91,30 @@ public class TaskScorerTests
         Assert.True(ss < fs);
     }
 }
+
+public class TaskScorerLearnedPeakTests
+{
+    [Fact]
+    public void TimeOfDayFit_BoostsHighCost_InsideLearnedPeak()
+    {
+        // 10am, learned peak window starts at 9 (9-11).
+        var at10am = new DateTimeOffset(2026, 6, 1, 10, 0, 0, TimeSpan.Zero);
+
+        var inPeak = TaskScorer.TimeOfDayFit(EnergyCost.High, at10am, learnedPeakHourStart: 9);
+        var outsidePeak = TaskScorer.TimeOfDayFit(EnergyCost.High, at10am, learnedPeakHourStart: 14);
+
+        Assert.True(inPeak > outsidePeak);
+    }
+
+    [Fact]
+    public void Score_HigherForHighCostTask_DuringLearnedPeak()
+    {
+        var at10am = new DateTimeOffset(2026, 6, 1, 10, 0, 0, TimeSpan.Zero);
+        var task = new TaskItem("deep work", EnergyCost.High, Importance.Normal);
+
+        var duringPeak = TaskScorer.Score(task, EnergyLevel.Good, at10am, learnedPeakHourStart: 9);
+        var offPeak = TaskScorer.Score(task, EnergyLevel.Good, at10am, learnedPeakHourStart: 18);
+
+        Assert.True(duringPeak > offPeak);
+    }
+}

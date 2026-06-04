@@ -14,7 +14,7 @@ public static class TaskScorer
     /// Score a task in 0..~1 (the energy boost can nudge slightly above 1). Higher = surface sooner.
     /// </summary>
     public static double Score(TaskItem task, EnergyLevel currentEnergy, DateTimeOffset now,
-        ScoringWeights? weights = null, DecayParameters? decay = null)
+        ScoringWeights? weights = null, DecayParameters? decay = null, int? learnedPeakHourStart = null)
     {
         var w = weights ?? ScoringWeights.Default;
 
@@ -22,7 +22,7 @@ public static class TaskScorer
         double importanceNorm = ((int)task.Importance - 1) / 2.0;           // Low=0, Normal=.5, High=1
         double ageDays = Math.Max(0, (now - task.CreatedAt).TotalDays);
         double ageNorm = Math.Clamp(ageDays / w.AgeSaturationDays, 0, 1);
-        double timeFit = TimeOfDayFit(task.EnergyCost, now);                // 0..1
+        double timeFit = TimeOfDayFit(task.EnergyCost, now, learnedPeakHourStart);                // 0..1
         double snoozeNorm = Math.Clamp(task.SnoozeCount / (double)w.SnoozeSaturationCount, 0, 1);
 
         double baseScore =
@@ -61,14 +61,27 @@ public static class TaskScorer
     public static bool PassesEnergyGate(EnergyCost cost, EnergyLevel energy) => (int)cost <= (int)energy;
 
     /// <summary>
-    /// A simple, deterministic time-of-day heuristic until Slice 5 learns real patterns:
-    /// high-cost work fits mornings, medium fits midday, low fits evenings.
-    /// Returns 0..1.
+    /// Time-of-day fit (0..1). Falls back to a static heuristic (high-cost work fits mornings,
+    /// medium midday, low evenings). When a LEARNED peak window is supplied (from Insights),
+    /// being inside it boosts higher-cost work — the app adapting to when you actually deliver.
     /// </summary>
-    public static double TimeOfDayFit(EnergyCost cost, DateTimeOffset now)
+    public static double TimeOfDayFit(EnergyCost cost, DateTimeOffset now, int? learnedPeakHourStart = null)
     {
-        int hour = now.ToLocalTime().Hour;
-        // 0 = night, simple buckets
+        int hour = now.Hour;
+
+        if (learnedPeakHourStart is int peak)
+        {
+            bool inPeak = IsWithinWindow(hour, peak, 3);
+            return cost switch
+            {
+                EnergyCost.High => inPeak ? 1.0 : 0.4,
+                EnergyCost.Medium => inPeak ? 0.85 : 0.55,
+                EnergyCost.Low => inPeak ? 0.6 : 0.7,   // save easy wins for off-peak
+                _ => 0.5
+            };
+        }
+
+        // Static fallback until there's enough data to learn a peak.
         bool morning = hour >= 6 && hour < 12;
         bool midday = hour >= 12 && hour < 17;
         bool evening = hour >= 17 && hour < 23;
@@ -80,5 +93,12 @@ public static class TaskScorer
             EnergyCost.Low => evening ? 1.0 : 0.6,
             _ => 0.5
         };
+    }
+
+    private static bool IsWithinWindow(int hour, int start, int length)
+    {
+        for (int i = 0; i < length; i++)
+            if ((start + i) % 24 == hour) return true;
+        return false;
     }
 }

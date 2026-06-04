@@ -315,3 +315,46 @@ svg { display: block; }
   font-family: inherit; font-size: 13px; text-decoration: underline; text-underline-offset: 3px;
 }
 .fs-focus-outcomes button:hover { color: var(--text); }
+
+/* ===== insights ===== */
+.fs-insight-headline {
+  background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--accent);
+  border-radius: var(--radius-sm); padding: 16px 18px; margin-bottom: 18px;
+  font-size: 17px; color: var(--text); box-shadow: var(--card-shadow);
+}
+.fs-insight-headline strong { color: var(--accent-d); }
+
+.fs-stat-row { display: flex; gap: 10px; margin-bottom: 8px; }
+.fs-stat {
+  flex: 1; background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 16px 12px; text-align: center;
+  box-shadow: 0 4px 14px rgba(0,0,0,.04);
+}
+.fs-stat-num { font-size: 30px; font-weight: 600; letter-spacing: -1px; color: var(--text); }
+.fs-stat-unit { font-size: 16px; color: var(--muted); margin-left: 1px; }
+.fs-stat-label { font-size: 11px; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
+
+.fs-chart {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 16px 16px 10px; box-shadow: 0 4px 14px rgba(0,0,0,.04);
+}
+.fs-bars { display: flex; align-items: flex-end; gap: 2px; height: 110px; }
+.fs-bar-col { flex: 1; height: 100%; display: flex; align-items: flex-end; }
+.fs-bar {
+  width: 100%; background: var(--border); border-radius: 3px 3px 0 0;
+  transition: height .4s ease, background .3s;
+}
+.fs-bar.peak { background: var(--accent); }
+.fs-bars-axis {
+  display: flex; justify-content: space-between; margin-top: 6px;
+  font-size: 10px; color: var(--muted);
+}
+
+.fs-hbar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 13px; }
+.fs-hbar-label { display: flex; align-items: center; gap: 7px; width: 78px; color: var(--text); }
+.fs-hbar-track { flex: 1; height: 12px; background: var(--bg2); border-radius: 999px; overflow: hidden; }
+.fs-hbar-fill { height: 100%; border-radius: 999px; transition: width .5s ease; }
+.fs-hbar-fill.fs-low { background: var(--moss); }
+.fs-hbar-fill.fs-medium { background: var(--gold); }
+.fs-hbar-fill.fs-high { background: var(--clay); }
+.fs-hbar-num { width: 20px; text-align: right; color: var(--muted); }
