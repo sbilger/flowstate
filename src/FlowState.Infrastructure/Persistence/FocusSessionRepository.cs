@@ -4,11 +4,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FlowState.Infrastructure.Persistence;
 
-public class FocusSessionRepository : IFocusSessionRepository
+public class FocusSessionRepository : IFocusSessionRepository, IDisposable
 {
     private readonly FlowStateDbContext _db;
 
-    public FocusSessionRepository(FlowStateDbContext db) => _db = db;
+    /// <summary>Each repository instance owns a fresh context from the factory (see TaskRepository).</summary>
+    public FocusSessionRepository(IDbContextFactory<FlowStateDbContext> factory)
+        => _db = factory.CreateDbContext();
 
     public async Task<FocusSession?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         => await _db.FocusSessions.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
@@ -30,4 +32,6 @@ public class FocusSessionRepository : IFocusSessionRepository
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
         => await _db.SaveChangesAsync(cancellationToken);
+
+    public void Dispose() => _db.Dispose();
 }
