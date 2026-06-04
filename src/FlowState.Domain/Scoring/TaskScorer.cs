@@ -13,7 +13,8 @@ public static class TaskScorer
     /// <summary>
     /// Score a task in 0..~1 (the energy boost can nudge slightly above 1). Higher = surface sooner.
     /// </summary>
-    public static double Score(TaskItem task, EnergyLevel currentEnergy, DateTimeOffset now, ScoringWeights? weights = null)
+    public static double Score(TaskItem task, EnergyLevel currentEnergy, DateTimeOffset now,
+        ScoringWeights? weights = null, DecayParameters? decay = null)
     {
         var w = weights ?? ScoringWeights.Default;
 
@@ -35,7 +36,10 @@ public static class TaskScorer
         // --- energy gate (hard multiplier) ---
         double gate = EnergyGate(task.EnergyCost, currentEnergy, w);
 
-        return baseScore * gate;
+        // --- freshness decay multiplier (opt-in; defaults to no decay when null) ---
+        double freshness = decay is null ? 1.0 : DecayEngine.Freshness(task, now, decay);
+
+        return baseScore * gate * freshness;
     }
 
     /// <summary>

@@ -2,7 +2,10 @@ using FlowState.Application;
 using FlowState.Infrastructure;
 using FlowState.Infrastructure.Persistence;
 using FlowState.Web.Components;
+using FlowState.Web.Jobs;
 using FlowState.Web.Services;
+using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,9 +21,19 @@ builder.Services.AddInfrastructure(builder.Configuration);
 // Scoped UI state (current energy level) shared across the circuit.
 builder.Services.AddScoped<UiState>();
 
+// Hangfire — background jobs for the decay/resurfacing lifecycle.
+var connectionString = builder.Configuration.GetConnectionString("FlowState")!;
+builder.Services.AddHangfire(cfg => cfg
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UsePostgreSqlStorage(opt => opt.UseNpgsqlConnection(connectionString)));
+builder.Services.AddHangfireServer();
+builder.Services.AddScoped<DecayJob>();
+
 var app = builder.Build();
 
-// Apply pending migrations on startup (fine for the walking skeleton / single-instance demo).
+// Apply pending migrations + seed on startup (fine for single-instance demo).
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<FlowStateDbContext>();
@@ -36,6 +49,18 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseAntiforgery();
+
+// Hangfire dashboard (local-only for now; auth gating arrives with Identity in Slice 10).
+app.UseHangfireDashboard("/jobs", new DashboardOptions
+{
+    Authorization = new[] { new FlowState.Web.Jobs.LocalOnlyDashboardAuthorization() }
+});
+
+// Register the recurring decay sweep (every 15 minutes).
+RecurringJob.AddOrUpdate<DecayJob>(
+    "decay-sweep",
+    job => job.RunAsync(),
+    "*/15 * * * *");
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()

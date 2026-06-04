@@ -21,6 +21,17 @@ public class TaskRepository : ITaskRepository
             .OrderByDescending(t => t.CreatedAt)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<TaskItem>> GetOpenTrackedAsync(CancellationToken cancellationToken = default)
+        => await _db.Tasks
+            .Where(t => t.Status == TaskItemStatus.Open)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<TaskItem>> GetResurfacedAsync(CancellationToken cancellationToken = default)
+        => await _db.Tasks.AsNoTracking()
+            .Where(t => t.Status == TaskItemStatus.Open && t.DecayState == DecayState.Resurfaced)
+            .OrderBy(t => t.DormantSince)
+            .ToListAsync(cancellationToken);
+
     public async Task<TaskItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         => await _db.Tasks.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
 

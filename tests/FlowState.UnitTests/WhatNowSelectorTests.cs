@@ -88,3 +88,35 @@ public class WhatNowSelectorTests
         Assert.True(counts["high scary"] > counts["easy win"]);
     }
 }
+
+public class WhatNowDecayTests
+{
+    private static readonly DateTimeOffset Now = new(2026, 6, 1, 9, 0, 0, TimeSpan.Zero);
+
+    [Fact]
+    public void Rank_ExcludesDormantTasks()
+    {
+        var active = new TaskItem("active", EnergyCost.Low, Importance.Normal);
+        var dormant = new TaskItem("dormant", EnergyCost.Low, Importance.High);
+        dormant.GoDormant(Now);
+
+        var ranked = WhatNowSelector.Rank(new[] { active, dormant }, EnergyLevel.Good, Now);
+
+        Assert.Single(ranked);
+        Assert.Equal("active", ranked[0].Task.Title);
+    }
+
+    [Fact]
+    public void Rank_ExcludesResurfacedTasks_TheyNeedADecision()
+    {
+        var active = new TaskItem("active", EnergyCost.Low);
+        var resurfaced = new TaskItem("resurfaced", EnergyCost.Low, Importance.High);
+        resurfaced.GoDormant(Now);
+        resurfaced.Resurface();
+
+        var ranked = WhatNowSelector.Rank(new[] { active, resurfaced }, EnergyLevel.Good, Now);
+
+        Assert.Single(ranked);
+        Assert.Equal("active", ranked[0].Task.Title);
+    }
+}

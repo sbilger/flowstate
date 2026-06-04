@@ -3,6 +3,7 @@ using System;
 using FlowState.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FlowState.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(FlowStateDbContext))]
-    partial class FlowStateDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260604050505_AddDecayLifecycle")]
+    partial class AddDecayLifecycle
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
