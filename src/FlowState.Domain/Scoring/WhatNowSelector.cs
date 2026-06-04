@@ -18,13 +18,13 @@ public static class WhatNowSelector
     /// </summary>
     public static IReadOnlyList<ScoredTask> Rank(
         IEnumerable<TaskItem> tasks, EnergyLevel currentEnergy, DateTimeOffset now,
-        ScoringWeights? weights = null, DecayParameters? decay = null)
+        ScoringWeights? weights = null, DecayParameters? decay = null, int? learnedPeakHourStart = null)
     {
         return tasks
             .Where(t => t.Status == TaskItemStatus.Open)
             .Where(t => t.DecayState == DecayState.Active)   // Dormant rests; Resurfaced needs a decision
             .Where(t => TaskScorer.PassesEnergyGate(t.EnergyCost, currentEnergy))
-            .Select(t => new ScoredTask(t, TaskScorer.Score(t, currentEnergy, now, weights, decay)))
+            .Select(t => new ScoredTask(t, TaskScorer.Score(t, currentEnergy, now, weights, decay, learnedPeakHourStart)))
             .OrderByDescending(s => s.Score)
             .ThenByDescending(s => s.Task.CreatedAt)
             .ToList();
@@ -33,8 +33,8 @@ public static class WhatNowSelector
     /// <summary>The single best task to surface, or null if nothing fits the current energy.</summary>
     public static ScoredTask? Top(
         IEnumerable<TaskItem> tasks, EnergyLevel currentEnergy, DateTimeOffset now,
-        ScoringWeights? weights = null, DecayParameters? decay = null)
-        => Rank(tasks, currentEnergy, now, weights, decay).FirstOrDefault();
+        ScoringWeights? weights = null, DecayParameters? decay = null, int? learnedPeakHourStart = null)
+        => Rank(tasks, currentEnergy, now, weights, decay, learnedPeakHourStart).FirstOrDefault();
 
     /// <summary>
     /// Dopamine-friendly "pick for me": a weighted-random choice among eligible tasks,
@@ -42,9 +42,9 @@ public static class WhatNowSelector
     /// </summary>
     public static ScoredTask? PickForMe(
         IEnumerable<TaskItem> tasks, EnergyLevel currentEnergy, DateTimeOffset now,
-        Random random, ScoringWeights? weights = null, DecayParameters? decay = null)
+        Random random, ScoringWeights? weights = null, DecayParameters? decay = null, int? learnedPeakHourStart = null)
     {
-        var ranked = Rank(tasks, currentEnergy, now, weights, decay);
+        var ranked = Rank(tasks, currentEnergy, now, weights, decay, learnedPeakHourStart);
         if (ranked.Count == 0) return null;
         if (ranked.Count == 1) return ranked[0];
 

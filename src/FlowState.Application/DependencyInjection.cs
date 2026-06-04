@@ -9,6 +9,7 @@ public static class DependencyInjection
     {
         services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+        services.AddMemoryCache();
         return services;
     }
 }

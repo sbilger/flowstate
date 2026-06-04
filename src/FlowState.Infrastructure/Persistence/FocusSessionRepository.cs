@@ -27,6 +27,11 @@ public class FocusSessionRepository : IFocusSessionRepository, IDisposable
             .Take(take)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<FocusSession>> GetAllAsync(CancellationToken cancellationToken = default)
+        => await _db.FocusSessions.AsNoTracking()
+            .OrderByDescending(s => s.StartedAt)
+            .ToListAsync(cancellationToken);
+
     public async Task AddAsync(FocusSession session, CancellationToken cancellationToken = default)
         => await _db.FocusSessions.AddAsync(session, cancellationToken);
 

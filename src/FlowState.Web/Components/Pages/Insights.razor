@@ -1,11 +1,119 @@
 @page "/insights"
+@using FlowState.Application.Insights
+@using FlowState.Domain.Insights
+@using FlowState.Domain.Tasks
+@using MediatR
+@inject IMediator Mediator
+@rendermode InteractiveServer
 
 <PageTitle>Insights · FlowState</PageTitle>
 
 <h1 class="fs-greet">Insights</h1>
-<p class="fs-sub">Learn when and how you actually get things done.</p>
+<p class="fs-sub">When and how you actually get things done.</p>
 
-<div class="fs-empty">
-    <p>Not enough data yet.</p>
-    <p class="fs-muted">Coming in a later slice: peak windows, session length, avoidance patterns.</p>
-</div>
+@if (_data is null)
+{
+    <p class="fs-muted">Crunching…</p>
+}
+else if (!_data.HasData)
+{
+    <div class="fs-empty">
+        <p>Not enough data yet.</p>
+        <p class="fs-muted">Finish a task or two and run a focus session — patterns show up here.</p>
+    </div>
+}
+else
+{
+    @if (_data.PeakHourStart is int peak)
+    {
+        <div class="fs-insight-headline">
+            You finish most things <strong>@FormatWindow(peak)</strong>.
+        </div>
+    }
+
+    <div class="fs-stat-row">
+        <div class="fs-stat">
+            <div class="fs-stat-num">@_data.CompletedCount</div>
+            <div class="fs-stat-label">tasks done</div>
+        </div>
+        <div class="fs-stat">
+            <div class="fs-stat-num">@_data.AverageFocusMinutes<span class="fs-stat-unit">m</span></div>
+            <div class="fs-stat-label">avg focus</div>
+        </div>
+        <div class="fs-stat">
+            <div class="fs-stat-num">@(Math.Round(_data.CompletionRate * 100))<span class="fs-stat-unit">%</span></div>
+            <div class="fs-stat-label">finish rate</div>
+        </div>
+    </div>
+
+    <div class="fs-label">Your day</div>
+    <div class="fs-chart">
+        <div class="fs-bars">
+            @foreach (var b in _data.CompletionsByHour)
+            {
+                var pct = (int)(b.Count / (double)MaxHour * 100);
+                var inPeak = _data.PeakHourStart is int p && b.Hour >= p && b.Hour < p + 3;
+                <div class="fs-bar-col" title="@b.Count done at @FormatHour(b.Hour)">
+                    <div class="fs-bar @(inPeak ? "peak" : "")" style="height:@(Math.Max(pct,2))%"></div>
+                </div>
+            }
+        </div>
+        <div class="fs-bars-axis"><span>12a</span><span>6a</span><span>12p</span><span>6p</span><span>11p</span></div>
+    </div>
+
+    <div class="fs-label">Energy vs. done</div>
+    @foreach (var e in _data.EnergyBreakdown)
+    {
+        <div class="fs-hbar-row">
+            <span class="fs-hbar-label"><span class="fs-dot @EnergyClass(e.EnergyCost)"></span> @e.EnergyCost</span>
+            <div class="fs-hbar-track">
+                <div class="fs-hbar-fill @EnergyClass(e.EnergyCost)" style="width:@((int)(e.Completed / (double)MaxEnergy * 100))%"></div>
+            </div>
+            <span class="fs-hbar-num">@e.Completed</span>
+        </div>
+    }
+
+    @if (_data.MostAvoided.Count > 0)
+    {
+        <div class="fs-label">Most put off</div>
+        @foreach (var a in _data.MostAvoided)
+        {
+            <div class="fs-item">
+                <span class="l">@a.Title</span>
+                <span class="t">snoozed @a.SnoozeCount× · @a.DaysOld d old</span>
+            </div>
+        }
+    }
+}
+
+@code {
+    private InsightsResult? _data;
+
+    private int MaxHour => _data is null || _data.CompletionsByHour.Count == 0
+        ? 1 : Math.Max(1, _data.CompletionsByHour.Max(b => b.Count));
+    private int MaxEnergy => _data is null || _data.EnergyBreakdown.Count == 0
+        ? 1 : Math.Max(1, _data.EnergyBreakdown.Max(e => e.Completed));
+
+    protected override async Task OnInitializedAsync()
+    {
+        var offset = (int)Math.Round(DateTimeOffset.Now.Offset.TotalHours);
+        _data = await Mediator.Send(new GetInsightsQuery(offset));
+    }
+
+    private static string FormatHour(int h) => h switch
+    {
+        0 => "12am",
+        < 12 => $"{h}am",
+        12 => "12pm",
+        _ => $"{h - 12}pm"
+    };
+
+    private static string FormatWindow(int start) => $"{FormatHour(start)}–{FormatHour((start + 3) % 24)}";
+
+    private static string EnergyClass(EnergyCost c) => c switch
+    {
+        EnergyCost.Low => "fs-low",
+        EnergyCost.Medium => "fs-medium",
+        _ => "fs-high"
+    };
+}
