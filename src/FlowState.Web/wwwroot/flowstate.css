@@ -290,3 +290,28 @@ svg { display: block; }
 .fs-chip-primary:hover { filter: brightness(1.05); }
 .fs-chip-danger { color: var(--clay); border-color: transparent; }
 .fs-chip-danger:hover { border-color: var(--clay); }
+
+/* ===== focus mode visual countdown ring ===== */
+.fs-ring-wrap { position: relative; width: 240px; height: 240px; margin: 8px 0 18px; }
+.fs-ring-svg { display: block; }
+.fs-ring-track { fill: none; stroke: var(--border); stroke-width: 10; }
+.fs-ring-progress {
+  fill: none; stroke: var(--accent); stroke-width: 10; stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear, stroke .4s ease;
+}
+.fs-ring-progress.overtime { stroke: var(--clay); }
+.fs-ring-center {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+}
+.fs-ring-center .fs-timer { font-size: 46px; }
+.fs-ring-sub { font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+.fs-focus-outcomes {
+  display: flex; gap: 10px; align-items: center; margin-top: 16px;
+  font-size: 13px; color: var(--muted);
+}
+.fs-focus-outcomes button {
+  background: none; border: none; cursor: pointer; color: var(--muted);
+  font-family: inherit; font-size: 13px; text-decoration: underline; text-underline-offset: 3px;
+}
+.fs-focus-outcomes button:hover { color: var(--text); }

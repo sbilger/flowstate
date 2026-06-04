@@ -2,6 +2,7 @@ using FlowState.Application;
 using FlowState.Infrastructure;
 using FlowState.Infrastructure.Persistence;
 using FlowState.Web.Components;
+using FlowState.Web.Hubs;
 using FlowState.Web.Jobs;
 using FlowState.Web.Services;
 using Hangfire;
@@ -20,6 +21,11 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 // Scoped UI state (current energy level) shared across the circuit.
 builder.Services.AddScoped<UiState>();
+
+// SignalR + server-authoritative focus timer.
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<FocusTimerRegistry>();
+builder.Services.AddHostedService<FocusTimerService>();
 
 // Hangfire — background jobs for the decay/resurfacing lifecycle.
 var connectionString = builder.Configuration.GetConnectionString("FlowState")!;
@@ -61,6 +67,8 @@ RecurringJob.AddOrUpdate<DecayJob>(
     "decay-sweep",
     job => job.RunAsync(),
     "*/15 * * * *");
+
+app.MapHub<FocusHub>("/hubs/focus");
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()

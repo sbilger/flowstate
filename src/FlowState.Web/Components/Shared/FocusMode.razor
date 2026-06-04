@@ -1,17 +1,44 @@
+@using FlowState.Application.Focus
 @using FlowState.Application.Tasks
-@using System.Timers
-@implements IDisposable
+@using FlowState.Domain.Focus
+@using FlowState.Web.Hubs
+@using MediatR
+@inject IMediator Mediator
+@inject FocusTimerRegistry Registry
+@inject IJSRuntime JS
+@implements IAsyncDisposable
 
 <div class="fs-focus">
     <button class="fs-focus-x" @onclick="Exit">✕ end</button>
     <div class="fs-kicker">Focus</div>
     <h2>@Task.Title</h2>
-    <div class="fs-timer">@Elapsed</div>
-    <div class="fs-ring"></div>
-    <div class="fs-row" style="max-width:280px">
+
+    <div class="fs-ring-wrap">
+        <svg class="fs-ring-svg" viewBox="0 0 220 220" width="240" height="240">
+            <circle class="fs-ring-track" cx="110" cy="110" r="@Radius" />
+            <circle class="fs-ring-progress @(_overtime ? "overtime" : "")"
+                    cx="110" cy="110" r="@Radius"
+                    stroke-dasharray="@Circumference"
+                    stroke-dashoffset="@DashOffset"
+                    transform="rotate(-90 110 110)" />
+        </svg>
+        <div class="fs-ring-center">
+            <div class="fs-timer">@Display</div>
+            <div class="fs-ring-sub">@SubText</div>
+        </div>
+    </div>
+
+    <div class="fs-row" style="max-width:300px;margin-top:6px">
         <button class="fs-btn fs-btn-ghost" @onclick="TogglePause">@(_paused ? "Resume" : "Pause")</button>
         <button class="fs-btn fs-btn-primary" @onclick="Done">Done</button>
     </div>
+
+    <div class="fs-focus-outcomes">
+        <button @onclick="@(() => End(FocusOutcome.Progress))">Made progress</button>
+        <span>·</span>
+        <button @onclick="@(() => End(FocusOutcome.Abandoned))">Got stuck</button>
+    </div>
+
     <p class="fs-quote">"Stay here. One thing. You've got it."</p>
 </div>
 
@@ -20,47 +47,96 @@
     [Parameter] public EventCallback OnDone { get; set; }
     [Parameter] public EventCallback OnExit { get; set; }
 
-    private System.Timers.Timer? _timer;
-    private int _seconds;
+    private const double Radius = 100;
+    private double Circumference => 2 * Math.PI * Radius;
+
+    private FocusSessionDto? _session;
+    private int _elapsed;
+    private int _planned = 300;
+    private bool _overtime;
     private bool _paused;
+    private DotNetObjectReference<FocusMode>? _ref;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        _timer = new System.Timers.Timer(1000);
-        _timer.Elapsed += Tick;
-        _timer.AutoReset = true;
-        _timer.Start();
+        _session = await Mediator.Send(new StartFocusSessionCommand(Task.Id));
+        _planned = _session.PlannedSeconds;
+        Registry.Start(_session.Id, _session.StartedAt, _session.PlannedSeconds);
     }
 
-    private void Tick(object? sender, ElapsedEventArgs e)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_paused) return;
-        _seconds++;
-        InvokeAsync(StateHasChanged);
+        if (firstRender && _session is not null)
+        {
+            _ref = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("flowstateFocus.start", _session.Id, _ref);
+        }
     }
 
-    private void TogglePause() => _paused = !_paused;
-
-    private async Task Done()
+    [JSInvokable]
+    public Task OnTick(int elapsed, int planned, bool overtime)
     {
-        Stop();
-        await OnDone.InvokeAsync();
+        _elapsed = elapsed;
+        _planned = planned;
+        _overtime = overtime;
+        return InvokeAsync(StateHasChanged);
     }
 
-    private async Task Exit()
+    private void TogglePause()
     {
-        Stop();
-        await OnExit.InvokeAsync();
+        _paused = !_paused;
+        if (_session is not null) Registry.SetPaused(_session.Id, _paused);
     }
 
-    private void Stop()
+    private async Task Done() => await End(FocusOutcome.Completed);
+
+    private async Task End(FocusOutcome outcome)
     {
-        _timer?.Stop();
-        _timer?.Dispose();
-        _timer = null;
+        await Cleanup();
+        if (_session is not null)
+            await Mediator.Send(new EndFocusSessionCommand(_session.Id, outcome));
+
+        if (outcome == FocusOutcome.Completed)
+            await OnDone.InvokeAsync();
+        else
+            await OnExit.InvokeAsync();
     }
 
-    private string Elapsed => $"{_seconds / 60:00}:{_seconds % 60:00}";
+    private async Task Exit() => await End(FocusOutcome.Abandoned);
 
-    public void Dispose() => Stop();
+    private async Task Cleanup()
+    {
+        if (_session is not null)
+        {
+            Registry.Stop(_session.Id);
+            try { await JS.InvokeVoidAsync("flowstateFocus.stop", _session.Id); } catch { }
+        }
+        _ref?.Dispose();
+        _ref = null;
+    }
+
+    // ---- visual ring ----
+    private double DashOffset
+    {
+        get
+        {
+            if (_overtime) return 0;
+            double frac = _planned <= 0 ? 0 : Math.Clamp(_elapsed / (double)_planned, 0, 1);
+            return Circumference * (1 - frac); // fills as time elapses
+        }
+    }
+
+    private string Display
+    {
+        get
+        {
+            int remaining = _planned - _elapsed;
+            int show = _overtime ? _elapsed - _planned : Math.Max(0, remaining);
+            return $"{show / 60:00}:{show % 60:00}";
+        }
+    }
+
+    private string SubText => _overtime ? "overtime" : _paused ? "paused" : "remaining";
+
+    public async ValueTask DisposeAsync() => await Cleanup();
 }
