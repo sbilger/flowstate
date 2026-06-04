@@ -1,0 +1,66 @@
+@using FlowState.Application.Tasks
+@using System.Timers
+@implements IDisposable
+
+<div class="fs-focus">
+    <button class="fs-focus-x" @onclick="Exit">✕ end</button>
+    <div class="fs-kicker">Focus</div>
+    <h2>@Task.Title</h2>
+    <div class="fs-timer">@Elapsed</div>
+    <div class="fs-ring"></div>
+    <div class="fs-row" style="max-width:280px">
+        <button class="fs-btn fs-btn-ghost" @onclick="TogglePause">@(_paused ? "Resume" : "Pause")</button>
+        <button class="fs-btn fs-btn-primary" @onclick="Done">Done</button>
+    </div>
+    <p class="fs-quote">"Stay here. One thing. You've got it."</p>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public TaskDto Task { get; set; } = default!;
+    [Parameter] public EventCallback OnDone { get; set; }
+    [Parameter] public EventCallback OnExit { get; set; }
+
+    private System.Timers.Timer? _timer;
+    private int _seconds;
+    private bool _paused;
+
+    protected override void OnInitialized()
+    {
+        _timer = new System.Timers.Timer(1000);
+        _timer.Elapsed += Tick;
+        _timer.AutoReset = true;
+        _timer.Start();
+    }
+
+    private void Tick(object? sender, ElapsedEventArgs e)
+    {
+        if (_paused) return;
+        _seconds++;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void TogglePause() => _paused = !_paused;
+
+    private async Task Done()
+    {
+        Stop();
+        await OnDone.InvokeAsync();
+    }
+
+    private async Task Exit()
+    {
+        Stop();
+        await OnExit.InvokeAsync();
+    }
+
+    private void Stop()
+    {
+        _timer?.Stop();
+        _timer?.Dispose();
+        _timer = null;
+    }
+
+    private string Elapsed => $"{_seconds / 60:00}:{_seconds % 60:00}";
+
+    public void Dispose() => Stop();
+}

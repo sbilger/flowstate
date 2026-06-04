@@ -9,6 +9,9 @@ namespace FlowState.Application.Common;
 public interface ITaskRepository
 {
     Task<IReadOnlyList<TaskItem>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<TaskItem>> GetOpenAsync(CancellationToken cancellationToken = default);
+    Task<TaskItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task AddAsync(TaskItem task, CancellationToken cancellationToken = default);
+    void Remove(TaskItem task);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FlowState — Elegant (light + dark)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    /* ELEGANT — LIGHT (default) */
+    --bg:#f5f1ec; --bg2:#efe9e1; --card:#fffdfb; --text:#2c2a28; --muted:#9a9088;
+    --border:#ece4da; --chip:#fffdfb; --accent:#7c9a86; --accent-d:#5f7d69; --onaccent:#ffffff;
+    --clay:#cf8a5a; --moss:#7c9a86; --gold:#c8923a; --high:#cf8a5a;
+    --radius:22px; --cardshadow:0 14px 36px rgba(124,154,134,.16); --btnshadow:0 8px 20px rgba(124,154,134,.32);
+    --grain:.35;
+  }
+  html[data-theme="dark"]{
+    /* ELEGANT — DARK (soft, warm-charcoal; not harsh black) */
+    --bg:#1c1f1d; --bg2:#171a18; --card:#24302a; --text:#e8e4dd; --muted:#9aa39b;
+    --border:#2f3b34; --chip:#24302a; --accent:#8fb89c; --accent-d:#6f9a7d; --onaccent:#16201a;
+    --clay:#e0a06c; --moss:#8fb89c; --gold:#d6ad5f; --high:#e0a06c;
+    --cardshadow:0 16px 40px rgba(0,0,0,.40); --btnshadow:0 8px 22px rgba(143,184,156,.22);
+    --grain:.18;
+  }
+  body{background:var(--bg);font-family:Inter,system-ui,sans-serif;color:var(--text);
+       min-height:100vh;padding:26px 16px 60px;transition:background .35s ease,color .35s ease}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:var(--grain);
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/></svg>");
+    mix-blend-mode:multiply;transition:opacity .35s}
+  .head{position:relative;z-index:1;max-width:430px;margin:0 auto 18px;display:flex;align-items:center;justify-content:space-between}
+  .head h1{font-size:17px;font-weight:600;letter-spacing:-.3px}
+  /* toggle */
+  .toggle{display:inline-flex;align-items:center;gap:9px;cursor:pointer;user-select:none;
+          background:var(--card);border:1px solid var(--border);border-radius:999px;padding:6px 8px;
+          box-shadow:0 2px 8px rgba(0,0,0,.06)}
+  .switch{width:42px;height:24px;border-radius:999px;background:var(--bg2);border:1px solid var(--border);
+          position:relative;transition:background .3s}
+  .knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--accent);
+        transition:transform .3s, background .3s;display:grid;place-items:center}
+  .knob svg{width:11px;height:11px;stroke:var(--onaccent)}
+  html[data-theme="dark"] .knob{transform:translateX(18px)}
+  .toggle .lab{font-size:12.5px;color:var(--muted);min-width:34px}
+
+  .phone{position:relative;z-index:1;max-width:430px;margin:0 auto;border-radius:28px;overflow:hidden;
+         border:1px solid var(--border);background:var(--bg);box-shadow:0 26px 60px rgba(0,0,0,.18);
+         display:flex;flex-direction:column;min-height:600px;transition:background .35s}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 0}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:600;font-size:20px;letter-spacing:-.4px}
+  .mark{width:28px;height:28px;border-radius:9px;background:var(--accent);display:grid;place-items:center;transition:background .35s}
+  .mark svg{stroke:var(--onaccent)}
+  .energy{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);
+          background:var(--chip);border:1px solid var(--border);border-radius:999px;padding:7px 12px;cursor:pointer}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--moss)}
+  .body{padding:18px 20px}
+  .greet{font-weight:600;font-size:24px;letter-spacing:-.5px}
+  .sub{color:var(--muted);font-size:14px;margin-top:4px}
+  .card{margin-top:20px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+        padding:24px 22px;box-shadow:var(--cardshadow);transition:background .35s,box-shadow .35s}
+  .eyebrow{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--high);
+           display:flex;align-items:center;gap:7px}
+  .eyebrow .pip{width:6px;height:6px;border-radius:50%;background:var(--high)}
+  .task{font-weight:600;font-size:26px;line-height:1.15;letter-spacing:-.6px;margin:13px 0 6px}
+  .meta{color:var(--muted);font-size:13px}
+  .row{display:flex;gap:10px;margin-top:20px}
+  .btn{font-weight:600;font-size:14px;border:none;border-radius:14px;padding:13px 17px;cursor:pointer;font-family:inherit}
+  .primary{flex:1;background:var(--accent);color:var(--onaccent);box-shadow:var(--btnshadow);transition:background .35s}
+  .ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+  .reroll{text-align:center;margin-top:16px;font-size:13px;color:var(--muted)}
+  .reroll b{color:var(--accent);font-weight:600;cursor:pointer}
+  .label{font-size:11px;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);
+         margin:26px 0 11px;display:flex;align-items:center;gap:8px}
+  .label::after{content:"";flex:1;height:1px;background:var(--border)}
+  .item{display:flex;align-items:center;justify-content:space-between;background:var(--card);
+        border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:9px;
+        font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,.04);transition:background .35s}
+  .item .l{display:flex;align-items:center;gap:10px}
+  .item .t{color:var(--muted);font-size:12.5px}
+  .cal{display:flex;align-items:center;gap:9px;margin-top:16px;padding:12px 14px;font-size:13px;color:var(--muted);
+       background:var(--bg2);border:1px dashed var(--border);border-radius:14px;transition:background .35s}
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>FlowState — elegant theme</h1>
+    <div class="toggle" onclick="toggleTheme()">
+      <span class="lab" id="lab">Light</span>
+      <span class="switch"><span class="knob" id="knob"></span></span>
+    </div>
+  </div>
+
+  <div class="phone">
+    <div class="top">
+      <div class="brand"><span class="mark"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></span> FlowState</div>
+      <div class="energy"><span class="dot"></span> Good
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+    </div>
+    <div class="body">
+      <div class="greet">Good evening, Sean.</div>
+      <div class="sub">You're sharp right now — here's the one thing.</div>
+
+      <div class="card">
+        <div class="eyebrow"><span class="pip"></span> HIGH FOCUS</div>
+        <div class="task">Fix the export bug</div>
+        <div class="meta">about 30 min · captured in brain dump</div>
+        <div class="row">
+          <button class="btn primary"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px"><path d="M8 5v14l11-7z"/></svg>&nbsp; Start focus</button>
+          <button class="btn ghost">Not now</button>
+        </div>
+        <div class="reroll">Doesn't fit? <b>🎲 Pick for me</b></div>
+      </div>
+
+      <div class="label">Next, if you finish</div>
+      <div class="item"><span class="l"><span class="dot" style="background:var(--moss)"></span> Reply to landlord</span><span class="t">5 min</span></div>
+      <div class="item"><span class="l"><span class="dot" style="background:var(--high)"></span> Gather W-2s</span><span class="t">15 min</span></div>
+
+      <div class="cal">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>
+        Free until 2:00 — next up, dentist at 2:30.
+      </div>
+    </div>
+  </div>
+
+<script>
+  const sun = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/></svg>`;
+  const moon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>`;
+  function render(){
+    const dark = document.documentElement.dataset.theme === 'dark';
+    document.getElementById('knob').innerHTML = dark ? moon : sun;
+    document.getElementById('lab').textContent = dark ? 'Dark' : 'Light';
+  }
+  function toggleTheme(){
+    const el = document.documentElement;
+    el.dataset.theme = el.dataset.theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('fs-theme', el.dataset.theme);
+    render();
+  }
+  // restore saved preference (defaults to light)
+  document.documentElement.dataset.theme = localStorage.getItem('fs-theme') || 'light';
+  render();
+</script>
+</body>
+</html>

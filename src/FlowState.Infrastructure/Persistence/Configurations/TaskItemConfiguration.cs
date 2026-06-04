@@ -12,7 +12,13 @@ public class TaskItemConfiguration : IEntityTypeConfiguration<TaskItem>
         builder.HasKey(t => t.Id);
         builder.Property(t => t.Title).IsRequired().HasMaxLength(500);
         builder.Property(t => t.EnergyCost).HasConversion<int>();
+        builder.Property(t => t.Importance).HasConversion<int>();
         builder.Property(t => t.Status).HasConversion<int>();
+        builder.Property(t => t.SnoozeCount).IsRequired();
+        builder.Property(t => t.LastSnoozedAt);
         builder.Property(t => t.CreatedAt).IsRequired();
+        builder.Property(t => t.CompletedAt);
+
+        builder.HasIndex(t => t.Status);
     }
 }

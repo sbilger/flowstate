@@ -1,7 +1,183 @@
-﻿@page "/"
+@page "/"
+@using FlowState.Application.Tasks
+@using FlowState.Domain.Tasks
+@using FlowState.Web.Services
+@using MediatR
+@inject IMediator Mediator
+@inject UiState Ui
+@implements IDisposable
+@rendermode InteractiveServer
 
-<PageTitle>Home</PageTitle>
+<PageTitle>What now? · FlowState</PageTitle>
 
-<h1>Hello, world!</h1>
+@if (_focusTask is not null)
+{
+    <FocusMode Task="_focusTask" OnDone="OnFocusDone" OnExit="OnFocusExit" />
+}
 
-Welcome to your new app.
+<h1 class="fs-greet">@Greeting</h1>
+<p class="fs-sub">@SubHead</p>
+
+@if (_loading)
+{
+    <p class="fs-muted">Thinking…</p>
+}
+else if (_now is null)
+{
+    <div class="fs-empty">
+        @if (_eligibleCount == 0 && Ui.Energy != EnergyLevel.Good)
+        {
+            <p>Nothing low-key enough for <strong>@Ui.Energy</strong> energy right now.</p>
+            <p class="fs-muted">Bump your energy, or <a href="/tasks">brain-dump something →</a></p>
+        }
+        else
+        {
+            <p>Nothing queued.</p>
+            <p class="fs-muted"><a href="/tasks">Brain-dump something →</a></p>
+        }
+    </div>
+}
+else
+{
+    <div class="fs-card">
+        <span class="fs-eyebrow"><span class="pip"></span> @EnergyBadge</span>
+        <h2 class="fs-task">@_now.Task.Title</h2>
+        <p class="fs-meta">@EstimateText · @_now.Reason</p>
+
+        <div class="fs-row">
+            <button class="fs-btn fs-btn-primary" @onclick="() => StartFocus(_now.Task)">
+                <span style="display:inline-flex;align-items:center;gap:8px;justify-content:center">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                    Start focus
+                </span>
+            </button>
+            <button class="fs-btn fs-btn-ghost" @onclick="() => Complete(_now.Task.Id)">Done</button>
+            <button class="fs-btn fs-btn-ghost" @onclick="() => Snooze(_now.Task.Id)">Not now</button>
+        </div>
+
+        <p class="fs-reroll">
+            Doesn't fit?
+            <button @onclick="PickForMe">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.3" fill="currentColor"/><circle cx="16" cy="16" r="1.3" fill="currentColor"/><circle cx="16" cy="8" r="1.3" fill="currentColor"/><circle cx="8" cy="16" r="1.3" fill="currentColor"/></svg>
+                Pick for me
+            </button>
+        </p>
+    </div>
+
+    @if (_nextUp.Count > 0)
+    {
+        <div class="fs-label">Next, if you finish</div>
+        @foreach (var t in _nextUp)
+        {
+            <div class="fs-item">
+                <span class="l"><span class="fs-dot @EnergyClass(t.EnergyCost)"></span> @t.Title</span>
+                <span class="t">@EnergyShort(t.EnergyCost)</span>
+            </div>
+        }
+    }
+}
+
+@code {
+    private bool _loading = true;
+    private SurfacedTaskDto? _now;
+    private IReadOnlyList<TaskDto> _nextUp = Array.Empty<TaskDto>();
+    private int _eligibleCount;
+    private TaskDto? _focusTask;
+
+    protected override void OnInitialized() => Ui.EnergyChanged += OnEnergyChanged;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        _loading = true;
+        var result = await Mediator.Send(new GetWhatNowQuery(Ui.Energy));
+        _now = result.Now;
+        _nextUp = result.NextUp;
+        _eligibleCount = result.EligibleCount;
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async void OnEnergyChanged() => await InvokeAsync(Load);
+
+    private async Task PickForMe()
+    {
+        var pick = await Mediator.Send(new PickForMeQuery(Ui.Energy));
+        if (pick is not null)
+        {
+            _now = pick;
+            StateHasChanged();
+        }
+    }
+
+    private async Task Complete(Guid id)
+    {
+        await Mediator.Send(new CompleteTaskCommand(id));
+        await Load();
+    }
+
+    private async Task Snooze(Guid id)
+    {
+        await Mediator.Send(new SnoozeTaskCommand(id));
+        await Load();
+    }
+
+    private void StartFocus(TaskDto task) => _focusTask = task;
+
+    private async Task OnFocusDone()
+    {
+        if (_focusTask is not null)
+            await Mediator.Send(new CompleteTaskCommand(_focusTask.Id));
+        _focusTask = null;
+        await Load();
+    }
+
+    private void OnFocusExit() => _focusTask = null;
+
+    // ---- display helpers ----
+    private string Greeting => DateTimeOffset.Now.Hour switch
+    {
+        >= 5 and < 12 => "Good morning, Sean.",
+        >= 12 and < 17 => "Good afternoon, Sean.",
+        >= 17 and < 22 => "Good evening, Sean.",
+        _ => "Still up, Sean?"
+    };
+
+    private string SubHead => Ui.Energy switch
+    {
+        EnergyLevel.Good => "You're sharp right now — here's the one thing.",
+        EnergyLevel.Okay => "Medium gas in the tank — here's a solid pick.",
+        _ => "Low battery — only the easy wins, nothing scary."
+    };
+
+    private string EnergyBadge => _now is null ? "" : _now.Task.EnergyCost switch
+    {
+        EnergyCost.High => "HIGH FOCUS",
+        EnergyCost.Medium => "MEDIUM EFFORT",
+        _ => "LOW EFFORT"
+    };
+
+    private string EstimateText => _now is null ? "" : _now.Task.EnergyCost switch
+    {
+        EnergyCost.High => "about 30 min",
+        EnergyCost.Medium => "about 15 min",
+        _ => "about 5 min"
+    };
+
+    private static string EnergyClass(EnergyCost c) => c switch
+    {
+        EnergyCost.Low => "fs-low",
+        EnergyCost.Medium => "fs-medium",
+        _ => "fs-high"
+    };
+
+    private static string EnergyShort(EnergyCost c) => c switch
+    {
+        EnergyCost.High => "30 min",
+        EnergyCost.Medium => "15 min",
+        _ => "5 min"
+    };
+
+    public void Dispose() => Ui.EnergyChanged -= OnEnergyChanged;
+}
