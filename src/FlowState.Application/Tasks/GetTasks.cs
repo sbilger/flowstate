@@ -1,14 +1,10 @@
 using FlowState.Application.Common;
-using FlowState.Domain.Tasks;
 using MediatR;
 
 namespace FlowState.Application.Tasks;
 
-/// <summary>A task as exposed to the UI/API.</summary>
-public record TaskDto(Guid Id, string Title, EnergyCost EnergyCost, TaskItemStatus Status, DateTimeOffset CreatedAt);
-
-/// <summary>Returns all tasks. Slice 1 walking-skeleton query.</summary>
-public record GetTasksQuery : IRequest<IReadOnlyList<TaskDto>>;
+/// <summary>Returns all tasks (newest first).</summary>
+public record GetTasksQuery(bool OpenOnly = false) : IRequest<IReadOnlyList<TaskDto>>;
 
 public class GetTasksHandler : IRequestHandler<GetTasksQuery, IReadOnlyList<TaskDto>>
 {
@@ -18,9 +14,10 @@ public class GetTasksHandler : IRequestHandler<GetTasksQuery, IReadOnlyList<Task
 
     public async Task<IReadOnlyList<TaskDto>> Handle(GetTasksQuery request, CancellationToken cancellationToken)
     {
-        var tasks = await _repository.GetAllAsync(cancellationToken);
-        return tasks
-            .Select(t => new TaskDto(t.Id, t.Title, t.EnergyCost, t.Status, t.CreatedAt))
-            .ToList();
+        var tasks = request.OpenOnly
+            ? await _repository.GetOpenAsync(cancellationToken)
+            : await _repository.GetAllAsync(cancellationToken);
+
+        return tasks.Select(TaskDto.From).ToList();
     }
 }

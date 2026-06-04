@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FlowState — Theme Comparison</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Roboto:wght@300;400;500;700&family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#e9e4da;font-family:Inter,system-ui,sans-serif;color:#2b2620;padding:28px 16px 60px}
+  .head{max-width:1180px;margin:0 auto 24px;text-align:center}
+  .head h1{font-family:'Playfair Display',serif;font-size:30px;font-weight:600;letter-spacing:-.5px}
+  .head p{color:#6b6052;margin-top:6px;font-size:15px}
+  .grid{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  @media(max-width:1000px){.grid{grid-template-columns:1fr;max-width:420px}}
+
+  .col{display:flex;flex-direction:column}
+  .tag{text-align:center;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;
+       color:#8a8071;margin-bottom:10px}
+  .tag b{display:block;font-size:15px;letter-spacing:-.2px;text-transform:none;color:#2b2620;margin-top:2px}
+
+  /* phone shell */
+  .phone{border-radius:26px;overflow:hidden;border:1px solid rgba(0,0,0,.08);
+         box-shadow:0 22px 50px rgba(60,48,30,.16);background:var(--bg);min-height:560px;
+         display:flex;flex-direction:column}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 0}
+  .brand{display:flex;align-items:center;gap:8px;font-family:var(--fdisplay);font-weight:var(--brandw,600);
+         font-size:19px;letter-spacing:-.4px;color:var(--text)}
+  .mark{width:26px;height:26px;border-radius:8px;background:var(--accent);display:grid;place-items:center}
+  .mark svg{stroke:var(--onaccent)}
+  .energy{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);
+          background:var(--chip);border:1px solid var(--border);border-radius:999px;padding:6px 11px;font-family:var(--fbody)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--moss)}
+  .body{padding:18px;flex:1}
+  .greet{font-family:var(--fdisplay);font-weight:var(--greetw,600);font-size:var(--greetsize,23px);
+         letter-spacing:-.5px;color:var(--text)}
+  .sub{color:var(--muted);font-size:13.5px;margin-top:3px;font-family:var(--fbody)}
+
+  .card{margin-top:18px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+        padding:22px 20px;box-shadow:var(--cardshadow)}
+  .eyebrow{font-family:var(--fmono,var(--fbody));font-size:10.5px;font-weight:600;letter-spacing:2px;
+           text-transform:uppercase;color:var(--clay);display:flex;align-items:center;gap:7px}
+  .eyebrow .pip{width:6px;height:6px;border-radius:50%;background:var(--clay)}
+  .task{font-family:var(--fdisplay);font-weight:var(--taskw,600);font-size:var(--tasksize,25px);
+        line-height:1.15;letter-spacing:-.6px;color:var(--text);margin:12px 0 5px}
+  .meta{color:var(--muted);font-size:12.5px;font-family:var(--fmono,var(--fbody))}
+  .row{display:flex;gap:9px;margin-top:18px}
+  .btn{font-family:var(--fbody);font-weight:600;font-size:13.5px;border:none;border-radius:calc(var(--radius) - 4px);
+       padding:11px 15px;cursor:default}
+  .primary{flex:1;background:var(--accent);color:var(--onaccent);box-shadow:var(--btnshadow)}
+  .ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+  .reroll{text-align:center;margin-top:14px;font-size:12.5px;color:var(--muted);font-family:var(--fbody)}
+  .reroll b{color:var(--accent);font-weight:600}
+
+  .label{font-family:var(--fbody);font-size:10.5px;letter-spacing:1.3px;text-transform:uppercase;
+         color:var(--muted);margin:22px 0 10px;display:flex;align-items:center;gap:8px}
+  .label::after{content:"";flex:1;height:1px;background:var(--border)}
+  .item{display:flex;align-items:center;justify-content:space-between;background:var(--card);
+        border:1px solid var(--border);border-radius:calc(var(--radius) - 6px);padding:11px 13px;margin-bottom:8px;
+        font-size:13.5px;color:var(--text);font-family:var(--fbody)}
+  .item .l{display:flex;align-items:center;gap:9px}
+  .item .t{color:var(--muted);font-size:12px}
+
+  /* ===== THEME: refined (Playfair editorial, warm cream) ===== */
+  .refined{
+    --bg:#f3eee4; --card:#fbf8f2; --text:#23201b; --muted:#8a7f6d; --border:#e3d9c7;
+    --chip:#fbf8f2; --accent:#0f5e54; --onaccent:#fbf8f2; --clay:#bb5a2c; --moss:#5d8c52;
+    --radius:18px; --fdisplay:'Playfair Display',serif; --fbody:Inter,sans-serif; --fmono:'JetBrains Mono',monospace;
+    --cardshadow:0 10px 30px rgba(60,48,30,.10); --btnshadow:0 6px 16px rgba(15,94,84,.25);
+    --tasksize:27px; --taskw:600; --greetsize:24px;
+  }
+  /* ===== THEME: paper (Montserrat/Roboto, crisp warm-white) ===== */
+  .paper{
+    --bg:#efece5; --card:#ffffff; --text:#1a1a1a; --muted:#8a8479; --border:#e4e0d6;
+    --chip:#ffffff; --accent:#1a1a1a; --onaccent:#ffffff; --clay:#d2691e; --moss:#3fb950;
+    --radius:14px; --fdisplay:'Montserrat',sans-serif; --fbody:'Roboto',sans-serif; --fmono:'PT Mono',monospace;
+    --cardshadow:0 8px 24px rgba(0,0,0,.07); --btnshadow:0 6px 16px rgba(0,0,0,.18);
+    --tasksize:24px; --taskw:700; --greetsize:22px; --brandw:800; --greetw:700;
+  }
+  /* ===== THEME: elegant (Google Sans, soft wellness) ===== */
+  .elegant{
+    --bg:#f5f1ec; --card:#fffdfb; --text:#2c2a28; --muted:#9a9088; --border:#ece4da;
+    --chip:#fffdfb; --accent:#7c9a86; --onaccent:#ffffff; --clay:#cf8a5a; --moss:#7c9a86;
+    --radius:22px; --fdisplay:'Inter',sans-serif; --fbody:'Inter',sans-serif; --fmono:'Inter',sans-serif;
+    --cardshadow:0 14px 36px rgba(124,154,134,.16); --btnshadow:0 8px 20px rgba(124,154,134,.32);
+    --tasksize:24px; --taskw:600; --greetsize:23px; --brandw:600; --greetw:500;
+  }
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>FlowState — pick a look</h1>
+    <p>Same “What now?” hero screen, three TypeUI themes. Judge the type, color, and feel.</p>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+<script>
+  const themes = [
+    {cls:'refined', name:'refined', note:'Playfair serif · editorial · warm cream'},
+    {cls:'paper',   name:'paper',   note:'Montserrat/Roboto · crisp · minimal'},
+    {cls:'elegant', name:'elegant', note:'soft sans · wellness calm · sage'},
+  ];
+  const bolt = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>`;
+  const chev = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>`;
+  const play = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+
+  document.getElementById('grid').innerHTML = themes.map(t => `
+    <div class="col">
+      <div class="tag">Theme<b>${t.name}</b><span style="font-weight:400;font-size:11px;letter-spacing:0;text-transform:none;color:#8a8071">${t.note}</span></div>
+      <div class="phone ${t.cls}">
+        <div class="top">
+          <div class="brand"><span class="mark">${bolt}</span> FlowState</div>
+          <div class="energy"><span class="dot"></span> Good ${chev}</div>
+        </div>
+        <div class="body">
+          <div class="greet">Good evening, Sean.</div>
+          <div class="sub">You're sharp — here's the one thing.</div>
+          <div class="card">
+            <div class="eyebrow"><span class="pip"></span> HIGH FOCUS</div>
+            <div class="task">Fix the export bug</div>
+            <div class="meta">~30 min · brain dump</div>
+            <div class="row">
+              <button class="btn primary">${play}&nbsp; Start focus</button>
+              <button class="btn ghost">Not now</button>
+            </div>
+            <div class="reroll">Doesn't fit? <b>🎲 Pick for me</b></div>
+          </div>
+          <div class="label">Next, if you finish</div>
+          <div class="item"><span class="l"><span class="dot" style="background:var(--moss)"></span> Reply to landlord</span><span class="t">5 min</span></div>
+          <div class="item"><span class="l"><span class="dot" style="background:var(--clay)"></span> Gather W-2s</span><span class="t">15 min</span></div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+</script>
+</body>
+</html>
