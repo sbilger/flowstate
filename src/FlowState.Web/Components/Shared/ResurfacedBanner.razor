@@ -1,0 +1,61 @@
+@using FlowState.Application.Tasks
+@using MediatR
+@inject IMediator Mediator
+
+@if (_items.Count > 0)
+{
+    var item = _items[0];
+    <div class="fs-resurfaced">
+        <div class="fs-resurfaced-head">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.4 2.6L3 8"/><path d="M3 3v5h5"/></svg>
+            Still here
+            @if (_items.Count > 1)
+            {
+                <span class="fs-resurfaced-count">+@(_items.Count - 1) more</span>
+            }
+        </div>
+        <p class="fs-resurfaced-task">@item.Task.Title</p>
+        <p class="fs-resurfaced-sub">Waiting @item.DaysWaited @(item.DaysWaited == 1 ? "day" : "days"). What do you want to do with it?</p>
+        <div class="fs-resurfaced-actions">
+            <button class="fs-chip fs-chip-primary" @onclick="() => Keep(item.Task.Id)">Do it</button>
+            <button class="fs-chip" @onclick="() => Reschedule(item.Task.Id)">Later</button>
+            <button class="fs-chip fs-chip-danger" @onclick="() => Drop(item.Task.Id)">Drop it</button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private IReadOnlyList<ResurfacedTaskDto> _items = Array.Empty<ResurfacedTaskDto>();
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    public async Task Load() => _items = await Mediator.Send(new GetResurfacedQuery());
+
+    private async Task Keep(Guid id)
+    {
+        await Mediator.Send(new KeepTaskCommand(id));
+        await Refresh();
+    }
+
+    private async Task Reschedule(Guid id)
+    {
+        // "Later" = wake it up so it leaves the resurfaced queue but re-enters normal flow.
+        await Mediator.Send(new KeepTaskCommand(id));
+        await Refresh();
+    }
+
+    private async Task Drop(Guid id)
+    {
+        await Mediator.Send(new DeleteTaskCommand(id));
+        await Refresh();
+    }
+
+    private async Task Refresh()
+    {
+        await Load();
+        await OnChanged.InvokeAsync();
+        StateHasChanged();
+    }
+}

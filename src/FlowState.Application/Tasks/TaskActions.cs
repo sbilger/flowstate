@@ -56,3 +56,24 @@ public class DeleteTaskHandler : IRequestHandler<DeleteTaskCommand, bool>
         return true;
     }
 }
+
+/// <summary>
+/// Resurfacing decision: "keep it" / "do it" — wakes a resurfaced or dormant task back to
+/// Active, refreshing its decay clock so it re-enters "What now?".
+/// </summary>
+public record KeepTaskCommand(Guid Id) : IRequest<bool>;
+
+public class KeepTaskHandler : IRequestHandler<KeepTaskCommand, bool>
+{
+    private readonly ITaskRepository _repository;
+    public KeepTaskHandler(ITaskRepository repository) => _repository = repository;
+
+    public async Task<bool> Handle(KeepTaskCommand request, CancellationToken cancellationToken)
+    {
+        var task = await _repository.GetByIdAsync(request.Id, cancellationToken);
+        if (task is null) return false;
+        task.Touch(); // refreshes freshness + returns to Active
+        await _repository.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+}

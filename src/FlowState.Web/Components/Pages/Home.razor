@@ -18,6 +18,8 @@
 <h1 class="fs-greet">@Greeting</h1>
 <p class="fs-sub">@SubHead</p>
 
+<ResurfacedBanner @ref="_resurfaced" OnChanged="Load" />
+
 @if (_loading)
 {
     <p class="fs-muted">Thinking…</p>
@@ -83,6 +85,7 @@ else
     private IReadOnlyList<TaskDto> _nextUp = Array.Empty<TaskDto>();
     private int _eligibleCount;
     private TaskDto? _focusTask;
+    private ResurfacedBanner? _resurfaced;
 
     protected override void OnInitialized() => Ui.EnergyChanged += OnEnergyChanged;
 
